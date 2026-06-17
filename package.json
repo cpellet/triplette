@@ -1,0 +1,43 @@
+{
+  "name": "triplette",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "tauri": "tauri"
+  },
+  "dependencies": {
+    "@blueprintjs/core": "^6.16.0",
+    "@blueprintjs/icons": "^6.11.0",
+    "@blueprintjs/select": "^6.3.0",
+    "@rmlio/yarrrml-parser": "^1.12.2",
+    "@tailwindcss/vite": "^4.3.1",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "~2",
+    "@tauri-apps/plugin-fs": "~2",
+    "@tauri-apps/plugin-opener": "^2",
+    "normalize.css": "^8.0.1",
+    "rdflib": "^2.3.9",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-resizable-panels": "^4.11.2",
+    "rocketrml": "^3.0.0",
+    "tailwindcss": "^4.3.1",
+    "yaml": "^2.9.0",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/n3": "^1.26.1",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "n3": "^2.0.3",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4",
+    "vite-plugin-node-polyfills": "^0.28.0"
+  }
+}

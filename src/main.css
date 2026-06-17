@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+.bp6-tab-panel {
+  height: 100%;
+  margin-top: 0 !important;
+}
