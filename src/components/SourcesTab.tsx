@@ -4,6 +4,7 @@ import {
   CardList,
   EntityTitle,
   H5,
+  H6,
   NonIdealState,
   TabId,
   TabPanel,
@@ -58,31 +59,30 @@ export function SourcesTab({
               }
             />
           ) : (
-            <div className="flex-1 overflow-y-auto pr-2">
-              <CardList>
-                {project.sources.map((source) => (
-                  <Card
-                    key={source.id}
-                    elevation={0}
-                    className="border border-gray-200"
-                  >
-                    <div className="flex justify-between items-start w-full">
-                      <EntityTitle
-                        title={source.id}
-                        subtitle={source.uri}
-                        tags={<Tag>{source.format}</Tag>}
-                      />
-                      <Button
-                        icon="trash"
-                        minimal
-                        intent="danger"
-                        onClick={() => onRemoveSource(source.id)}
-                      />
-                    </div>
-                  </Card>
-                ))}
-              </CardList>
-            </div>
+            <CardList compact className="flex-1 overflow-y-auto">
+              {project.sources.map((source) => (
+                <Card
+                  key={source.id}
+                  elevation={0}
+                  className="border-b border-gray-200"
+                >
+                  <div className="flex justify-between items-start w-full">
+                    <EntityTitle
+                      title={source.id}
+                      heading={H6}
+                      subtitle={source.uri}
+                      tags={<Tag>{source.format}</Tag>}
+                    />
+                    <Button
+                      icon="trash"
+                      minimal
+                      intent="danger"
+                      onClick={() => onRemoveSource(source.id)}
+                    />
+                  </div>
+                </Card>
+              ))}
+            </CardList>
           )}
         </div>
       }

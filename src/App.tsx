@@ -5,16 +5,16 @@ import { useEffect, useId, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { RMLSource, ReferenceFormulation } from "./lib/state";
 import { useStore } from "./lib/store";
+import { toYarrrmlId } from "./lib/source-utils";
 
 import { AddSourceDialog } from "./components/AddSourceDialog";
 import { ConfigurationTab } from "./components/ConfigurationTab";
 import { EntitiesTab } from "./components/EntitiesTab";
 import { MainNavbar } from "./components/MainNavbar";
+import { OutputTabs } from "./components/OutputTabs";
 import { SourcesTab } from "./components/SourcesTab";
-import { TripletsPreview } from "./components/TripletsPreview";
-import { YarrrmlTab } from "./components/YarrrmlTab";
-import { WelcomePage } from "./components/WelcomePage";
 import { Updater } from "./components/Updater";
+import { WelcomePage } from "./components/WelcomePage";
 
 function App() {
   const isProjectActive = useStore((state) => state.isProjectActive);
@@ -98,7 +98,7 @@ function App() {
         ...newSource,
         uri: selected,
         format,
-        id,
+        id: toYarrrmlId(id),
       });
     }
   };
@@ -125,8 +125,6 @@ function App() {
             selectedTabId={selectedTabId}
             setSelectedTabId={setSelectedTabId}
             TABS_PARENT_ID={TABS_PARENT_ID}
-            onGenerateTriples={runTripleGeneration}
-            isGenerating={isGenerating}
           />
           <Group className="w-full h-full" orientation="vertical">
             <Panel defaultSize="70%" className="mt-12">
@@ -136,7 +134,6 @@ function App() {
                 parentId={TABS_PARENT_ID}
                 onOntologySelect={handleOntologySelect}
               />
-
               <SourcesTab
                 project={project}
                 selectedTabId={selectedTabId}
@@ -144,7 +141,6 @@ function App() {
                 onRemoveSource={removeSource}
                 onAddSourceClick={() => setIsAddSourceDialogOpen(true)}
               />
-
               <EntitiesTab
                 project={project}
                 selectedTabId={selectedTabId}
@@ -153,15 +149,12 @@ function App() {
                 updateEntity={updateEntity}
                 removeEntity={removeEntity}
               />
-
-              <YarrrmlTab
-                selectedTabId={selectedTabId}
-                parentId={TABS_PARENT_ID}
-                yarrrmlContent={project.yarrrmlContent}
-              />
             </Panel>
             <Separator className="w-full h-1 bg-gray-200 hover:bg-blue-500 transition-colors cursor-row-resize" />
-            <TripletsPreview />
+            <OutputTabs
+              isGenerating={isGenerating}
+              onGenerateTriples={runTripleGeneration}
+            />
           </Group>
 
           <AddSourceDialog

@@ -109,7 +109,6 @@ export function Updater() {
 
     const setupListener = async () => {
       const unlisten = await listen("menu-check-update", () => {
-        console.log("menu-check-update event received");
         checkForUpdates(true);
       });
       return unlisten;

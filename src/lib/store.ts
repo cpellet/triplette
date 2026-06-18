@@ -18,7 +18,7 @@ const RECENT_PROJECTS_KEY = "triplette_recent_projects";
 
 interface Store extends TripletteState {
   setProjectName: (name: string) => void;
-  loadOntology: (filePath: string) => Promise<void>;
+  loadOntology: (filePath: string, silent?: boolean) => Promise<void>;
 
   addSource: (source: RMLSource) => Promise<void>;
   removeSource: (id: string) => void;
@@ -96,11 +96,13 @@ export const useStore = create<Store>((set, get) => {
     recentProjects: loadRecentProjects(),
     project: { ...DEFAULT_PROJECT },
 
-    setProjectName: (name) =>
+    setProjectName: (name) => {
+      if (get().project.name === name) return;
       set((state) => ({
         project: { ...state.project, name },
         isDirty: true,
-      })),
+      }));
+    },
 
     addSource: async (source) => {
       // Auto-extract columns
@@ -206,7 +208,7 @@ export const useStore = create<Store>((set, get) => {
       }
     },
 
-    loadOntology: async (filePath: string) => {
+    loadOntology: async (filePath: string, silent = false) => {
       try {
         const content = await readTextFile(filePath);
         const { classes, properties } = parseOntology(content);
@@ -217,7 +219,7 @@ export const useStore = create<Store>((set, get) => {
             classes,
             properties,
           },
-          isDirty: true,
+          isDirty: silent ? state.isDirty : true,
         }));
       } catch (error) {
         console.error("Failed to load ontology:", error);
@@ -256,7 +258,7 @@ export const useStore = create<Store>((set, get) => {
         updateRecentProject(projectData.name, path);
 
         if (projectData.ontologyFilePath) {
-          get().loadOntology(projectData.ontologyFilePath);
+          get().loadOntology(projectData.ontologyFilePath, true);
         }
       } catch (error) {
         console.error("Failed to load recent project:", error);
@@ -333,7 +335,7 @@ export const useStore = create<Store>((set, get) => {
 
         // If project has an ontology, reload it to populate classes/properties
         if (projectData.ontologyFilePath) {
-          get().loadOntology(projectData.ontologyFilePath);
+          get().loadOntology(projectData.ontologyFilePath, true);
         }
       } catch (error) {
         console.error("Failed to load project:", error);

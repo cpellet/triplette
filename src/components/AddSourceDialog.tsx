@@ -8,6 +8,7 @@ import {
   InputGroup,
 } from "@blueprintjs/core";
 import { RMLSource, ReferenceFormulation } from "../lib/state";
+import { toYarrrmlId } from "../lib/source-utils";
 
 interface AddSourceDialogProps {
   isOpen: boolean;
@@ -43,7 +44,7 @@ export function AddSourceDialog({
             placeholder="e.g. users_data"
             value={newSource.id}
             onChange={(e) =>
-              setNewSource({ ...newSource, id: e.target.value })
+              setNewSource({ ...newSource, id: toYarrrmlId(e.target.value) })
             }
           />
         </FormGroup>

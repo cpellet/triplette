@@ -7,9 +7,15 @@
     "core:default",
     "opener:default",
     "core:window:allow-set-title",
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [{ "path": "$HOME/**/*" }]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "$HOME/**/*" }]
+    },
     "fs:default",
-    "fs:allow-write-text-file",
-    "fs:allow-read-text-file",
     "dialog:default",
     "updater:default",
     "process:allow-restart"

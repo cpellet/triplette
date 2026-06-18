@@ -1,4 +1,4 @@
-import { Button, H2, Icon, Text } from "@blueprintjs/core";
+import { Button, H1, Icon, Text } from "@blueprintjs/core";
 import { useStore } from "../lib/store";
 
 export function WelcomePage() {
@@ -14,9 +14,9 @@ export function WelcomePage() {
       <div className="max-w-3xl w-full flex items-stretch p-8 space-x-12">
         {/* Left Side: Start */}
         <div className="flex-1 flex flex-col justify-center space-y-6">
-          <H2 className="flex flex-row items-center gap-2">
+          <H1 className="flex flex-row items-center gap-2">
             <Icon icon="graph" className="text-red-500" size={24} /> Triplette
-          </H2>
+          </H1>
           <div className="flex flex-col gap-3 max-w-xs mt-12">
             <Button
               intent="primary"
@@ -48,7 +48,7 @@ export function WelcomePage() {
                 <button
                   key={project.path}
                   onClick={() => openRecentProject(project.path)}
-                  className="w-full text-left p-3 hover:bg-gray-100 transition-colors rounded group flex flex-col"
+                  className="w-full text-left px-3 py-2 hover:bg-gray-100 transition-colors rounded group flex flex-col cursor-pointer"
                 >
                   <Text ellipsize className="font-medium text-gray-800">
                     {project.name}

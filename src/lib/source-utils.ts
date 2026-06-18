@@ -42,3 +42,14 @@ export async function extractColumns(
   
   return [];
 }
+
+/**
+ * Converts a string into a human-readable ID suitable for YARRRML.
+ */
+export function toYarrrmlId(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+

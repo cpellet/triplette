@@ -56,7 +56,6 @@ pub fn run() {
                     let _ = app_handle.emit("menu-save-project", ());
                 }
                 "check_update" => {
-                    println!("Menu: Check for updates clicked");
                     let _ = app_handle.emit("menu-check-update", ());
                 }
 
