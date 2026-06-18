@@ -16,6 +16,7 @@ fn read_file_content(path: String) -> Result<String, String> {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             let open_item = MenuItemBuilder::new("Open Project...")
                 .id("open_project")
@@ -27,12 +28,23 @@ pub fn run() {
                 .accelerator("CmdOrCtrl+S")
                 .build(app)?;
 
+            let check_update_item = MenuItemBuilder::new("Check for Updates...")
+                .id("check_update")
+                .build(app)?;
+
             let file_submenu = SubmenuBuilder::new(app, "File")
                 .item(&open_item)
                 .item(&save_item)
                 .build()?;
 
-            let menu = MenuBuilder::new(app).item(&file_submenu).build()?;
+            let help_submenu = SubmenuBuilder::new(app, "Help")
+                .item(&check_update_item)
+                .build()?;
+
+            let menu = MenuBuilder::new(app)
+                .item(&file_submenu)
+                .item(&help_submenu)
+                .build()?;
 
             app.set_menu(menu)?;
 
@@ -42,6 +54,10 @@ pub fn run() {
                 }
                 "save_project" => {
                     let _ = app_handle.emit("menu-save-project", ());
+                }
+                "check_update" => {
+                    println!("Menu: Check for updates clicked");
+                    let _ = app_handle.emit("menu-check-update", ());
                 }
 
                 _ => {}

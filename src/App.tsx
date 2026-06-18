@@ -14,6 +14,7 @@ import { SourcesTab } from "./components/SourcesTab";
 import { TripletsPreview } from "./components/TripletsPreview";
 import { YarrrmlTab } from "./components/YarrrmlTab";
 import { WelcomePage } from "./components/WelcomePage";
+import { Updater } from "./components/Updater";
 
 function App() {
   const isProjectActive = useStore((state) => state.isProjectActive);
@@ -110,67 +111,70 @@ function App() {
     }
   };
 
-  if (!isProjectActive) {
-    return <WelcomePage />;
-  }
-
   return (
-    <main className="h-screen bg-gray-50">
-      <MainNavbar
-        projectName={projectName}
-        setProjectName={setProjectName}
-        filePath={filePath}
-        selectedTabId={selectedTabId}
-        setSelectedTabId={setSelectedTabId}
-        TABS_PARENT_ID={TABS_PARENT_ID}
-        onGenerateTriples={runTripleGeneration}
-        isGenerating={isGenerating}
-      />
-      <Group className="w-full h-full" orientation="vertical">
-        <Panel defaultSize="70%" className="mt-12">
-          <ConfigurationTab
-            project={project}
+    <>
+      <Updater />
+      {!isProjectActive ? (
+        <WelcomePage />
+      ) : (
+        <main className="h-screen bg-gray-50">
+          <MainNavbar
+            projectName={projectName}
+            setProjectName={setProjectName}
+            filePath={filePath}
             selectedTabId={selectedTabId}
-            parentId={TABS_PARENT_ID}
-            onOntologySelect={handleOntologySelect}
+            setSelectedTabId={setSelectedTabId}
+            TABS_PARENT_ID={TABS_PARENT_ID}
+            onGenerateTriples={runTripleGeneration}
+            isGenerating={isGenerating}
           />
+          <Group className="w-full h-full" orientation="vertical">
+            <Panel defaultSize="70%" className="mt-12">
+              <ConfigurationTab
+                project={project}
+                selectedTabId={selectedTabId}
+                parentId={TABS_PARENT_ID}
+                onOntologySelect={handleOntologySelect}
+              />
 
-          <SourcesTab
-            project={project}
-            selectedTabId={selectedTabId}
-            parentId={TABS_PARENT_ID}
-            onRemoveSource={removeSource}
-            onAddSourceClick={() => setIsAddSourceDialogOpen(true)}
+              <SourcesTab
+                project={project}
+                selectedTabId={selectedTabId}
+                parentId={TABS_PARENT_ID}
+                onRemoveSource={removeSource}
+                onAddSourceClick={() => setIsAddSourceDialogOpen(true)}
+              />
+
+              <EntitiesTab
+                project={project}
+                selectedTabId={selectedTabId}
+                parentId={TABS_PARENT_ID}
+                addEntity={addEntity}
+                updateEntity={updateEntity}
+                removeEntity={removeEntity}
+              />
+
+              <YarrrmlTab
+                selectedTabId={selectedTabId}
+                parentId={TABS_PARENT_ID}
+                yarrrmlContent={project.yarrrmlContent}
+              />
+            </Panel>
+            <Separator className="w-full h-1 bg-gray-200 hover:bg-blue-500 transition-colors cursor-row-resize" />
+            <TripletsPreview />
+          </Group>
+
+          <AddSourceDialog
+            isOpen={isAddSourceDialogOpen}
+            onClose={() => setIsAddSourceDialogOpen(false)}
+            newSource={newSource}
+            setNewSource={setNewSource}
+            onAddSource={handleAddSource}
+            onFileSelect={handleFileSourceSelect}
           />
-
-          <EntitiesTab
-            project={project}
-            selectedTabId={selectedTabId}
-            parentId={TABS_PARENT_ID}
-            addEntity={addEntity}
-            updateEntity={updateEntity}
-            removeEntity={removeEntity}
-          />
-
-          <YarrrmlTab
-            selectedTabId={selectedTabId}
-            parentId={TABS_PARENT_ID}
-            yarrrmlContent={project.yarrrmlContent}
-          />
-        </Panel>
-        <Separator className="w-full h-1 bg-gray-200 hover:bg-blue-500 transition-colors cursor-row-resize" />
-        <TripletsPreview />
-      </Group>
-
-      <AddSourceDialog
-        isOpen={isAddSourceDialogOpen}
-        onClose={() => setIsAddSourceDialogOpen(false)}
-        newSource={newSource}
-        setNewSource={setNewSource}
-        onAddSource={handleAddSource}
-        onFileSelect={handleFileSourceSelect}
-      />
-    </main>
+        </main>
+      )}
+    </>
   );
 }
 
