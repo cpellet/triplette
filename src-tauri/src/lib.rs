@@ -15,6 +15,7 @@ fn read_file_content(path: String) -> Result<String, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let open_item = MenuItemBuilder::new("Open Project...")
                 .id("open_project")
