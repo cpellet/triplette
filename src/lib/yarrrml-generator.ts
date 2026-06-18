@@ -1,4 +1,4 @@
-import { YAMLMap, Document } from "yaml";
+import { YAMLMap, Document, YAMLSeq } from "yaml";
 import { TripletteProject } from "./state";
 
 /**
@@ -42,13 +42,19 @@ export function generateYarrrml(project: TripletteProject): string {
     // Predicate Objects (including classes)
     const poList: any[] = [];
     
-    // Classes are mapped to rdf:type
+    // Classes are mapped to a
     for (const classUri of entity.classUris) {
-      poList.push({ p: "rdf:type", o: classUri });
+      const poItem = new YAMLSeq();
+      poItem.flow = true;
+      poItem.add("a");
+      poItem.add(classUri);
+      poList.push(poItem);
     }
     
     // User-defined properties
     for (const prop of entity.properties) {
+      if (!prop.predicateUri || !prop.value) continue;
+      
       let objectValue: any = prop.value;
       
       // Handle different object types in YARRRML
@@ -58,7 +64,11 @@ export function generateYarrrml(project: TripletteProject): string {
         objectValue = prop.value; // already contains templates or is a URI
       }
       
-      poList.push({ p: prop.predicateUri, o: objectValue });
+      const poItem = new YAMLSeq();
+      poItem.flow = true;
+      poItem.add(prop.predicateUri);
+      poItem.add(objectValue);
+      poList.push(poItem);
     }
     
     entityMap.set("po", poList);

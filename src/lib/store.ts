@@ -1,5 +1,5 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+import { readTextFile } from "@tauri-apps/plugin-fs";
 import { invoke } from "@tauri-apps/api/core";
 import { create } from "zustand";
 import { parseOntology } from "./ontology";
@@ -290,7 +290,7 @@ export const useStore = create<Store>((set, get) => {
         if (!targetPath) return false;
 
         const fileContent = JSON.stringify(project, null, 2);
-        await writeTextFile(targetPath, fileContent);
+        await invoke("write_file_content", { path: targetPath, content: fileContent });
 
         set({ filePath: targetPath, isDirty: false });
         updateRecentProject(project.name, targetPath);

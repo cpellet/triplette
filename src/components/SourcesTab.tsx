@@ -44,7 +44,6 @@ export function SourcesTab({
               onClick={onAddSourceClick}
             />
           </div>
-
           {project.sources.length === 0 ? (
             <NonIdealState
               icon="database"

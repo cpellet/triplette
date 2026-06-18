@@ -2,21 +2,26 @@ import {
   Button,
   Card,
   CardList,
+  Dialog,
+  DialogBody,
   FormGroup,
   H6,
   HTMLSelect,
   InputGroup,
+  Menu,
+  MenuDivider,
   MenuItem,
   NonIdealState,
+  PopoverNext,
   Section,
   SectionCard,
   TabId,
   TabPanel,
 } from "@blueprintjs/core";
 import { MultiSelect, Suggest } from "@blueprintjs/select";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
-import { toYarrrmlId } from "../lib/source-utils";
+import { loadSampleData, SampleRow, toYarrrmlId } from "../lib/source-utils";
 import {
   OntologyClass,
   OntologyProperty,
@@ -53,6 +58,40 @@ export function EntitiesTab({
     (s) => s.id === selectedEntity?.sourceId,
   );
   const sourceColumns = selectedSource?.columns || [];
+
+  const [sampleRows, setSampleRows] = useState<SampleRow[]>([]);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (selectedSource && selectedSource.uri) {
+      loadSampleData(
+        selectedSource.uri,
+        selectedSource.format,
+        selectedSource.iterator,
+      )
+        .then((rows) => {
+          if (active) setSampleRows(rows);
+        })
+        .catch(() => {
+          if (active) setSampleRows([]);
+        });
+    } else {
+      setSampleRows([]);
+    }
+    return () => {
+      active = false;
+    };
+  }, [selectedSource?.id, selectedSource?.uri, selectedSource?.iterator]);
+
+  const evaluateTemplate = (template: string, row: SampleRow) => {
+    if (!template) return "";
+    return template.replace(/\{([^}]+)\}/g, (match, colName) => {
+      return row[colName] !== undefined && row[colName] !== null
+        ? row[colName]
+        : match;
+    });
+  };
 
   const handleAddEntity = () => {
     const newId = `entity_${Date.now()}`;
@@ -148,12 +187,30 @@ export function EntitiesTab({
 
   const renderColumnItem = (item: string, { handleClick, modifiers }: any) => {
     if (!modifiers.matchesPredicate) return null;
+
+    const samples = sampleRows
+      .map((row) => row[item])
+      .filter((val) => val !== undefined && val !== "")
+      .slice(0, 3)
+      .join(", ");
+
     return (
       <MenuItem
         active={modifiers.active}
         key={item}
         onClick={handleClick}
-        text={item}
+        text={
+          <div className="flex flex-col py-1">
+            <span className="font-semibold">{item}</span>
+            <span className="text-xs text-gray-400 mt-0.5 truncate max-w-[200px]">
+              {samples ? (
+                `e.g., ${samples}`
+              ) : (
+                <span className="italic">no data</span>
+              )}
+            </span>
+          </div>
+        }
       />
     );
   };
@@ -163,11 +220,12 @@ export function EntitiesTab({
   };
 
   return (
-    <TabPanel
-      id="entities"
-      selectedTabId={selectedTabId}
-      parentId={parentId}
-      className="h-full"
+    <>
+      <TabPanel
+        id="entities"
+        selectedTabId={selectedTabId}
+        parentId={parentId}
+        className="h-full"
       panel={
         <Group className="h-full" orientation="horizontal">
           <Panel defaultSize={20} minSize={15} className="px-2 py-0.5">
@@ -192,7 +250,7 @@ export function EntitiesTab({
                       interactive
                       compact
                       elevation={entity.id === selectedEntityId ? 1 : 0}
-                      className={`cursor-pointer flex flex-row justify-between ${
+                      className={`group cursor-pointer flex flex-row justify-between ${
                         entity.id === selectedEntityId
                           ? "bg-blue-50 border-blue-200"
                           : "border-transparent hover:bg-gray-50"
@@ -201,10 +259,11 @@ export function EntitiesTab({
                     >
                       <H6 className="mb-0!">{entity.name}</H6>
                       <Button
-                        icon="trash"
+                        icon="cross"
                         variant="minimal"
                         size="small"
                         intent="danger"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeEntity(entity.id);
@@ -225,250 +284,361 @@ export function EntitiesTab({
           <Panel defaultSize={80} minSize={30} className="py-0.5">
             <div className="h-full overflow-y-auto py-2 pl-2 box-border pr-2">
               {!selectedEntity ? (
-                <NonIdealState
-                  icon="graph"
-                  title="Select an entity"
-                  description="Choose an entity from the list or create a new one to start mapping."
-                  action={
-                    <Button
-                      icon="plus"
-                      text="Create Entity"
-                      onClick={handleAddEntity}
-                    />
-                  }
-                />
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <Section title="Entity Configuration" compact icon="cog">
-                    <SectionCard>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormGroup label="Display Name">
-                          <InputGroup
-                            value={selectedEntity.name}
-                            onChange={(e) => {
-                              const newName = e.target.value;
-                              const newId = toYarrrmlId(newName);
-                              updateEntity(selectedEntity.id, {
-                                name: newName,
-                                id: newId,
-                              });
-                              setSelectedEntityId(newId);
-                            }}
-                          />
-                        </FormGroup>
-                        <FormGroup label="YARRRML ID">
-                          <InputGroup
-                            value={selectedEntity.id}
-                            onChange={(e) =>
-                              updateEntity(selectedEntity.id, {
-                                id: e.target.value,
-                              })
-                            }
-                            className="font-mono"
-                          />
-                        </FormGroup>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormGroup label="Source">
-                          <HTMLSelect
-                            fill
-                            value={selectedEntity.sourceId}
-                            onChange={(e) =>
-                              updateEntity(selectedEntity.id, {
-                                sourceId: e.target.value,
-                              })
-                            }
-                          >
-                            <option value="" disabled>
-                              Select source...
-                            </option>
-                            {project.sources.map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.id} ({s.format})
-                              </option>
-                            ))}
-                          </HTMLSelect>
-                        </FormGroup>
-                        <FormGroup
-                          label="Subject Template"
-                          helperText="Use {column_name} for variables"
-                        >
-                          <InputGroup
-                            value={selectedEntity.subjectTemplate}
-                            onChange={(e) =>
-                              updateEntity(selectedEntity.id, {
-                                subjectTemplate: e.target.value,
-                              })
-                            }
-                          />
-                        </FormGroup>
-                      </div>
-
-                      <FormGroup label="Entity Classes">
-                        <MultiSelect<OntologyClass>
-                          fill
-                          placeholder="Select classes..."
-                          items={project.classes}
-                          itemRenderer={renderClassItem}
-                          itemPredicate={filterClass}
-                          selectedItems={project.classes.filter((c) =>
-                            selectedEntity.classUris.includes(c.uri),
-                          )}
-                          onItemSelect={(item) => {
-                            const isSelected =
-                              selectedEntity.classUris.includes(item.uri);
-                            const nextUris = isSelected
-                              ? selectedEntity.classUris.filter(
-                                  (u) => u !== item.uri,
-                                )
-                              : [...selectedEntity.classUris, item.uri];
-                            updateEntity(selectedEntity.id, {
-                              classUris: nextUris,
-                            });
-                          }}
-                          tagRenderer={(c) => c.label}
-                          onRemove={(item) => {
-                            updateEntity(selectedEntity.id, {
-                              classUris: selectedEntity.classUris.filter(
-                                (u) => u !== item.uri,
-                              ),
-                            });
-                          }}
-                          noResults={
-                            <MenuItem disabled text="No classes found" />
-                          }
+                    <NonIdealState
+                      icon="graph"
+                      title="Select an entity"
+                      description="Choose an entity from the list or create a new one to start mapping."
+                      action={
+                        <Button
+                          icon="plus"
+                          text="Create Entity"
+                          onClick={handleAddEntity}
                         />
-                      </FormGroup>
-                    </SectionCard>
-                  </Section>
+                      }
+                    />
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Section title="Entity Configuration" compact icon="cog">
+                        <SectionCard>
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormGroup label="Display Name">
+                              <InputGroup
+                                value={selectedEntity.name}
+                                onChange={(e) => {
+                                  const newName = e.target.value;
+                                  const newId = toYarrrmlId(newName);
+                                  updateEntity(selectedEntity.id, {
+                                    name: newName,
+                                    id: newId,
+                                  });
+                                  setSelectedEntityId(newId);
+                                }}
+                              />
+                            </FormGroup>
+                            <FormGroup label="YARRRML ID">
+                              <InputGroup
+                                value={selectedEntity.id}
+                                onChange={(e) =>
+                                  updateEntity(selectedEntity.id, {
+                                    id: e.target.value,
+                                  })
+                                }
+                                className="font-mono"
+                              />
+                            </FormGroup>
+                          </div>
 
-                  <Section
-                    title="Property Mappings"
-                    icon="exchange"
-                    rightElement={
-                      <Button icon="plus" minimal small onClick={addProp} />
-                    }
-                    compact
-                  >
-                    <SectionCard padded={false}>
-                      {selectedEntity.properties.length === 0 ? (
-                        <div className="p-4 text-center text-gray-400 text-xs">
-                          No property mappings defined. Click (+) to add one.
-                        </div>
-                      ) : (
-                        <table className="bp5-html-table bp5-html-table-bordered bp5-html-table-condensed w-full">
-                          <thead>
-                            <tr>
-                              <th className="w-1/3">Predicate (Ontology)</th>
-                              <th>Type</th>
-                              <th>Value / Column</th>
-                              <th className="w-10"></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {selectedEntity.properties.map((prop, idx) => (
-                              <tr key={idx}>
-                                <td>
-                                  <Suggest<OntologyProperty>
-                                    fill
-                                    items={project.properties}
-                                    itemRenderer={renderPropertyItem}
-                                    itemPredicate={filterProperty}
-                                    inputValueRenderer={(p) => p.uri}
-                                    onItemSelect={(p) =>
-                                      updateProp(idx, { predicateUri: p.uri })
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormGroup label="Source">
+                              <div className="flex gap-2">
+                                <HTMLSelect
+                                  fill
+                                  value={selectedEntity.sourceId}
+                                  onChange={(e) =>
+                                    updateEntity(selectedEntity.id, {
+                                      sourceId: e.target.value,
+                                    })
+                                  }
+                                >
+                                  <option value="" disabled>
+                                    Select source...
+                                  </option>
+                                  {project.sources.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                      {s.id} ({s.format})
+                                    </option>
+                                  ))}
+                                </HTMLSelect>
+                                <Button 
+                                  icon="eye-open" 
+                                  onClick={() => setIsPreviewOpen(true)} 
+                                  disabled={!selectedSource} 
+                                  title="Preview Source Data" 
+                                />
+                              </div>
+                            </FormGroup>
+                            <FormGroup
+                              label="Subject Template"
+                              helperText="Use {column_name} for variables"
+                            >
+                              <InputGroup
+                                value={selectedEntity.subjectTemplate}
+                                onChange={(e) =>
+                                  updateEntity(selectedEntity.id, {
+                                    subjectTemplate: e.target.value,
+                                  })
+                                }
+                                rightElement={
+                                  <PopoverNext
+                                    content={
+                                      <Menu>
+                                        <MenuDivider title="Insert Column" />
+                                        {sourceColumns.map((col) => {
+                                          const samples = sampleRows
+                                            .map((row) => row[col])
+                                            .filter((val) => val !== undefined && val !== "")
+                                            .slice(0, 3)
+                                            .join(", ");
+
+                                          return (
+                                            <MenuItem
+                                              key={col}
+                                              text={
+                                                <div className="flex flex-col py-1">
+                                                  <span className="font-semibold">{`{${col}}`}</span>
+                                                  <span className="text-xs text-gray-400 mt-0.5 truncate max-w-[200px]">
+                                                    {samples ? `e.g., ${samples}` : <span className="italic">no data</span>}
+                                                  </span>
+                                                </div>
+                                              }
+                                              onClick={() => {
+                                                const current = selectedEntity.subjectTemplate || "";
+                                                updateEntity(selectedEntity.id, {
+                                                  subjectTemplate: current + (current.endsWith("/") || current.length === 0 ? "" : "") + `{${col}}`,
+                                                });
+                                              }}
+                                            />
+                                          );
+                                        })}
+                                        {sourceColumns.length === 0 && (
+                                          <MenuItem
+                                            disabled
+                                            text="No columns found"
+                                          />
+                                        )}
+                                      </Menu>
                                     }
-                                    noResults={
-                                      <MenuItem
-                                        disabled
-                                        text="No properties found"
-                                      />
-                                    }
-                                    query={prop.predicateUri}
-                                    onQueryChange={(q) =>
-                                      updateProp(idx, { predicateUri: q })
-                                    }
-                                    inputProps={{
-                                      small: true,
-                                    }}
-                                  />
-                                </td>
-                                <td>
-                                  <HTMLSelect
-                                    minimal
-                                    value={prop.type}
-                                    onChange={(e) =>
-                                      updateProp(idx, {
-                                        type: e.target.value as any,
-                                      })
-                                    }
+                                    placement="bottom-end"
                                   >
-                                    <option value="column">Column</option>
-                                    <option value="constant">Constant</option>
-                                    <option value="template">Template</option>
-                                  </HTMLSelect>
-                                </td>
-                                <td>
-                                  {prop.type === "column" ? (
-                                    <Suggest<string>
-                                      fill
-                                      items={sourceColumns}
-                                      itemRenderer={renderColumnItem}
-                                      itemPredicate={filterColumn}
-                                      inputValueRenderer={(c) => c}
-                                      onItemSelect={(c) =>
-                                        updateProp(idx, { value: c })
-                                      }
-                                      noResults={
-                                        <MenuItem
-                                          disabled
-                                          text="No columns found"
+                                    <Button
+                                      icon="insert"
+                                      minimal
+                                      title="Insert Column Variable"
+                                    />
+                                  </PopoverNext>
+                                }
+                              />
+                              {sampleRows.length > 0 && selectedEntity.subjectTemplate && (
+                                <div className="text-xs text-green-600 mt-1 truncate">
+                                  Preview: {evaluateTemplate(selectedEntity.subjectTemplate, sampleRows[0])}
+                                </div>
+                              )}
+                            </FormGroup>
+                          </div>
+
+                          <FormGroup label="Entity Classes">
+                            <MultiSelect<OntologyClass>
+                              fill
+                              placeholder="Select classes..."
+                              items={project.classes}
+                              itemRenderer={renderClassItem}
+                              itemPredicate={filterClass}
+                              selectedItems={project.classes.filter((c) =>
+                                selectedEntity.classUris.includes(c.uri),
+                              )}
+                              onItemSelect={(item) => {
+                                const isSelected =
+                                  selectedEntity.classUris.includes(item.uri);
+                                const nextUris = isSelected
+                                  ? selectedEntity.classUris.filter(
+                                      (u) => u !== item.uri,
+                                    )
+                                  : [...selectedEntity.classUris, item.uri];
+                                updateEntity(selectedEntity.id, {
+                                  classUris: nextUris,
+                                });
+                              }}
+                              tagRenderer={(c) => c.label}
+                              onRemove={(item) => {
+                                updateEntity(selectedEntity.id, {
+                                  classUris: selectedEntity.classUris.filter(
+                                    (u) => u !== item.uri,
+                                  ),
+                                });
+                              }}
+                              noResults={
+                                <MenuItem disabled text="No classes found" />
+                              }
+                            />
+                          </FormGroup>
+                        </SectionCard>
+                      </Section>
+
+                      <Section
+                        title="Property Mappings"
+                        icon="exchange"
+                        rightElement={
+                          <Button icon="plus" minimal small onClick={addProp} />
+                        }
+                        compact
+                      >
+                        <SectionCard padded={false}>
+                          {selectedEntity.properties.length === 0 ? (
+                            <div className="p-4 text-center text-gray-400 text-xs">
+                              No property mappings defined. Click (+) to add
+                              one.
+                            </div>
+                          ) : (
+                            <table className="bp5-html-table bp5-html-table-bordered bp5-html-table-condensed w-full">
+                              <thead>
+                                <tr>
+                                  <th className="w-1/3">
+                                    Predicate (Ontology)
+                                  </th>
+                                  <th>Type</th>
+                                  <th>Value / Column</th>
+                                  <th className="w-10"></th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedEntity.properties.map((prop, idx) => (
+                                  <tr key={idx}>
+                                    <td>
+                                      <Suggest<OntologyProperty>
+                                        fill
+                                        items={project.properties}
+                                        itemRenderer={renderPropertyItem}
+                                        itemPredicate={filterProperty}
+                                        inputValueRenderer={(p) => p.uri}
+                                        onItemSelect={(p) =>
+                                          updateProp(idx, {
+                                            predicateUri: p.uri,
+                                          })
+                                        }
+                                        noResults={
+                                          <MenuItem
+                                            disabled
+                                            text="No properties found"
+                                          />
+                                        }
+                                        query={prop.predicateUri}
+                                        onQueryChange={(q) =>
+                                          updateProp(idx, { predicateUri: q })
+                                        }
+                                        inputProps={{
+                                          small: true,
+                                        }}
+                                      />
+                                    </td>
+                                    <td>
+                                      <HTMLSelect
+                                        minimal
+                                        value={prop.type}
+                                        onChange={(e) =>
+                                          updateProp(idx, {
+                                            type: e.target.value as any,
+                                          })
+                                        }
+                                      >
+                                        <option value="column">Column</option>
+                                        <option value="constant">
+                                          Constant
+                                        </option>
+                                        <option value="template">
+                                          Template
+                                        </option>
+                                      </HTMLSelect>
+                                    </td>
+                                    <td>
+                                      {prop.type === "column" ? (
+                                        <Suggest<string>
+                                          fill
+                                          items={sourceColumns}
+                                          itemRenderer={renderColumnItem}
+                                          itemPredicate={filterColumn}
+                                          inputValueRenderer={(c) => c}
+                                          onItemSelect={(c) =>
+                                            updateProp(idx, { value: c })
+                                          }
+                                          noResults={
+                                            <MenuItem
+                                              disabled
+                                              text="No columns found"
+                                            />
+                                          }
+                                          query={prop.value}
+                                          onQueryChange={(q) =>
+                                            updateProp(idx, { value: q })
+                                          }
+                                          inputProps={{
+                                            small: true,
+                                          }}
                                         />
-                                      }
-                                      query={prop.value}
-                                      onQueryChange={(q) =>
-                                        updateProp(idx, { value: q })
-                                      }
-                                      inputProps={{
-                                        small: true,
-                                      }}
-                                    />
-                                  ) : (
-                                    <InputGroup
-                                      small
-                                      placeholder="value..."
-                                      value={prop.value}
-                                      onChange={(e) =>
-                                        updateProp(idx, {
-                                          value: e.target.value,
-                                        })
-                                      }
-                                    />
-                                  )}
-                                </td>
-                                <td>
-                                  <Button
-                                    icon="cross"
-                                    minimal
-                                    small
-                                    intent="danger"
-                                    onClick={() => removeProp(idx)}
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      )}
-                    </SectionCard>
-                  </Section>
+                                      ) : (
+                                        <InputGroup
+                                          small
+                                          placeholder="value..."
+                                          value={prop.value}
+                                          onChange={(e) =>
+                                            updateProp(idx, {
+                                              value: e.target.value,
+                                            })
+                                          }
+                                        />
+                                      )}
+                                    </td>
+                                    <td>
+                                      <Button
+                                        icon="cross"
+                                        minimal
+                                        small
+                                        intent="danger"
+                                        onClick={() => removeProp(idx)}
+                                      />
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </SectionCard>
+                      </Section>
+                    </div>
+                  )}
                 </div>
+              </Panel>
+            </Group>
+          }
+        />
+        <Dialog
+          title={`Source Preview: ${selectedSource?.id || ''}`}
+          isOpen={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          style={{ width: "80vw", maxWidth: "1200px" }}
+        >
+          <DialogBody>
+            <div className="overflow-auto max-h-[60vh]">
+              {sampleRows.length === 0 ? (
+                <div className="text-center text-xs text-gray-400 py-4 italic">
+                  No preview records available or file failed to load.
+                </div>
+              ) : (
+                <table className="bp5-html-table bp5-html-table-bordered bp5-html-table-striped bp5-html-table-condensed w-full text-xs">
+                  <thead>
+                    <tr>
+                      {sourceColumns.map((col) => (
+                        <th key={col} className="font-mono text-gray-800 whitespace-nowrap">
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sampleRows.map((row, rIdx) => (
+                      <tr key={rIdx}>
+                        {sourceColumns.map((col) => (
+                          <td key={col} className="font-mono text-gray-600 truncate max-w-[200px]">
+                            {row[col] !== undefined ? row[col] : <span className="text-gray-300 italic">null</span>}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
-          </Panel>
-        </Group>
-      }
-    />
-  );
-}
+          </DialogBody>
+        </Dialog>
+      </>
+    );
+  }
