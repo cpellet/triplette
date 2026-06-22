@@ -14,7 +14,15 @@ export interface OntologyProperty {
   ranges: string[];
 }
 
-export type ReferenceFormulation = "csv" | "json" | "xml";
+export type ReferenceFormulation = "csv" | "json" | "xml" | "sql_excel_schema";
+
+export interface SQLExcelSchemaConfig {
+  tablesSheetName: string;
+  tableNameColumn: string;
+  propertiesSheetName: string;
+  propertiesTableNameColumn: string;
+  propertiesColumnNameColumn: string;
+}
 
 export interface RMLSource {
   id: string;
@@ -22,6 +30,7 @@ export interface RMLSource {
   format: ReferenceFormulation;
   iterator?: string;
   columns?: string[];
+  schemaConfig?: SQLExcelSchemaConfig;
 }
 
 export interface PropertyMapping {
@@ -43,6 +52,7 @@ export interface TripletteProject {
   name: string;
   ontologyFilePath: string | null;
   yarrrmlContent: string;
+  rmlContent: string;
   generatedTriples: string | null;
 
   // Extracted from ontology

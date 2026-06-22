@@ -35,19 +35,21 @@ export function AddSourceDialog({
       canOutsideClickClose
     >
       <DialogBody>
-        <FormGroup
-          label="Source ID (alias)"
-          labelInfo="(required)"
-          helperText="Used to refer to this source in mappings"
-        >
-          <InputGroup
-            placeholder="e.g. users_data"
-            value={newSource.id}
-            onChange={(e) =>
-              setNewSource({ ...newSource, id: toYarrrmlId(e.target.value) })
-            }
-          />
-        </FormGroup>
+        {newSource.format !== "sql_excel_schema" && (
+          <FormGroup
+            label="Source ID (alias)"
+            labelInfo="(required)"
+            helperText="Used to refer to this source in mappings"
+          >
+            <InputGroup
+              placeholder="e.g. users_data"
+              value={newSource.id}
+              onChange={(e) =>
+                setNewSource({ ...newSource, id: toYarrrmlId(e.target.value) })
+              }
+            />
+          </FormGroup>
+        )}
 
         <FormGroup label="File Path" labelInfo="(required)">
           <div className="flex gap-2">
@@ -78,6 +80,7 @@ export function AddSourceDialog({
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
               <option value="xml">XML</option>
+              <option value="sql_excel_schema">SQL Excel Schema</option>
             </HTMLSelect>
           </FormGroup>
 
@@ -101,6 +104,74 @@ export function AddSourceDialog({
             </FormGroup>
           )}
         </div>
+
+        {newSource.format === "sql_excel_schema" && (
+          <div className="flex flex-col gap-2 mt-4">
+            <h6 className="bp5-heading">Excel Schema Configuration</h6>
+            <div className="grid grid-cols-2 gap-4">
+              <FormGroup label="Tables Sheet Name">
+                <InputGroup
+                  value={newSource.schemaConfig?.tablesSheetName || ""}
+                  onChange={(e) =>
+                    setNewSource({
+                      ...newSource,
+                      schemaConfig: { ...newSource.schemaConfig, tablesSheetName: e.target.value } as any,
+                    })
+                  }
+                  placeholder="e.g. tables"
+                />
+              </FormGroup>
+              <FormGroup label="Table Name Column">
+                <InputGroup
+                  value={newSource.schemaConfig?.tableNameColumn || ""}
+                  onChange={(e) =>
+                    setNewSource({
+                      ...newSource,
+                      schemaConfig: { ...newSource.schemaConfig, tableNameColumn: e.target.value } as any,
+                    })
+                  }
+                  placeholder="e.g. table_name"
+                />
+              </FormGroup>
+              <FormGroup label="Properties Sheet Name">
+                <InputGroup
+                  value={newSource.schemaConfig?.propertiesSheetName || ""}
+                  onChange={(e) =>
+                    setNewSource({
+                      ...newSource,
+                      schemaConfig: { ...newSource.schemaConfig, propertiesSheetName: e.target.value } as any,
+                    })
+                  }
+                  placeholder="e.g. properties"
+                />
+              </FormGroup>
+              <FormGroup label="Properties Table Name Column">
+                <InputGroup
+                  value={newSource.schemaConfig?.propertiesTableNameColumn || ""}
+                  onChange={(e) =>
+                    setNewSource({
+                      ...newSource,
+                      schemaConfig: { ...newSource.schemaConfig, propertiesTableNameColumn: e.target.value } as any,
+                    })
+                  }
+                  placeholder="e.g. table_name"
+                />
+              </FormGroup>
+              <FormGroup label="Properties Column Name Column">
+                <InputGroup
+                  value={newSource.schemaConfig?.propertiesColumnNameColumn || ""}
+                  onChange={(e) =>
+                    setNewSource({
+                      ...newSource,
+                      schemaConfig: { ...newSource.schemaConfig, propertiesColumnNameColumn: e.target.value } as any,
+                    })
+                  }
+                  placeholder="e.g. column_name"
+                />
+              </FormGroup>
+            </div>
+          </div>
+        )}
       </DialogBody>
       <DialogFooter
         actions={
@@ -108,9 +179,9 @@ export function AddSourceDialog({
             <Button text="Cancel" onClick={onClose} />
             <Button
               intent="primary"
-              text="Register Source"
+              text={newSource.format === "sql_excel_schema" ? "Import Schema" : "Register Source"}
               onClick={onAddSource}
-              disabled={!newSource.id || !newSource.uri}
+              disabled={(!newSource.id && newSource.format !== "sql_excel_schema") || !newSource.uri}
             />
           </>
         }

@@ -10,6 +10,7 @@ import {
 import { useState } from "react";
 import { Panel } from "react-resizable-panels";
 import { useStore } from "../lib/store";
+import { MappingGraph } from "./MappingGraph";
 
 export function OutputTabs({
   onGenerateTriples,
@@ -20,6 +21,7 @@ export function OutputTabs({
 }) {
   const generatedTriples = useStore((state) => state.project.generatedTriples);
   const yarrrmlContent = useStore((state) => state.project.yarrrmlContent);
+  const rmlContent = useStore((state) => state.project.rmlContent);
   const [selectedTabId, setSelectedTabId] = useState<string>("triples");
 
   return (
@@ -40,6 +42,8 @@ export function OutputTabs({
             <H6 className="mb-1.5!">Output</H6>
             <Tab id="triples" title="RDF Triples" icon="layout-linear" />
             <Tab id="yarrrml" title="YARRRML" icon="code" />
+            <Tab id="rml" title="RML" icon="document" />
+            <Tab id="graph" title="Visualizer" icon="send-to-graph" />
           </Tabs>
 
           <Button
@@ -81,7 +85,7 @@ export function OutputTabs({
                 />
               </div>
             )
-          ) : (
+          ) : selectedTabId === "yarrrml" ? (
             <div className="h-full p-4 box-border flex flex-col overflow-hidden">
               <TextArea
                 fill
@@ -89,6 +93,21 @@ export function OutputTabs({
                 className="font-mono flex-1 resize-none"
                 style={{ height: "100%" }}
                 value={yarrrmlContent}
+                readOnly
+              />
+            </div>
+          ) : selectedTabId === "graph" ? (
+            <div className="h-full box-border flex flex-col overflow-hidden">
+              <MappingGraph />
+            </div>
+          ) : (
+            <div className="h-full p-4 box-border flex flex-col overflow-hidden">
+              <TextArea
+                fill
+                placeholder="Preview generated RML here"
+                className="font-mono flex-1 resize-none"
+                style={{ height: "100%" }}
+                value={rmlContent}
                 readOnly
               />
             </div>

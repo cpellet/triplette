@@ -5,7 +5,7 @@ import { useEffect, useId, useState } from "react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import { RMLSource, ReferenceFormulation } from "./lib/state";
 import { useStore } from "./lib/store";
-import { toYarrrmlId } from "./lib/source-utils";
+import { toYarrrmlId, importExcelSchema } from "./lib/source-utils";
 
 import { AddSourceDialog } from "./components/AddSourceDialog";
 import { ConfigurationTab } from "./components/ConfigurationTab";
@@ -15,8 +15,13 @@ import { OutputTabs } from "./components/OutputTabs";
 import { SourcesTab } from "./components/SourcesTab";
 import { Updater } from "./components/Updater";
 import { WelcomePage } from "./components/WelcomePage";
+import { MappingGraph } from "./components/MappingGraph";
 
 function App() {
+  const isGraphWindow = window.location.search.includes("window=graph");
+  if (isGraphWindow) {
+    return <MappingGraph isPopout={true} />;
+  }
   const isProjectActive = useStore((state) => state.isProjectActive);
   const project = useStore((state) => state.project);
   const {
@@ -82,7 +87,7 @@ function App() {
     const selected = await openDialog({
       multiple: false,
       filters: [
-        { name: "Data Source", extensions: ["csv", "json", "xml", "jsonld"] },
+        { name: "Data Source", extensions: ["csv", "json", "xml", "jsonld", "xlsx"] },
       ],
     });
 
@@ -91,6 +96,7 @@ function App() {
       let format: ReferenceFormulation = "csv";
       if (extension === "json" || extension === "jsonld") format = "json";
       if (extension === "xml") format = "xml";
+      if (extension === "xlsx") format = "sql_excel_schema";
 
       const id = selected.split(/[/\\]/).pop()?.split(".")[0] || "source";
 
@@ -99,12 +105,29 @@ function App() {
         uri: selected,
         format,
         id: toYarrrmlId(id),
+        schemaConfig: format === "sql_excel_schema" ? {
+          tablesSheetName: "tables",
+          tableNameColumn: "table_name",
+          propertiesSheetName: "properties",
+          propertiesTableNameColumn: "table_name",
+          propertiesColumnNameColumn: "column_name",
+        } : undefined
       });
     }
   };
 
-  const handleAddSource = () => {
-    if (newSource.id && newSource.uri && newSource.format) {
+  const handleAddSource = async () => {
+    if (newSource.format === "sql_excel_schema" && newSource.uri && newSource.schemaConfig) {
+      try {
+        const sources = await importExcelSchema(newSource.uri, newSource.schemaConfig);
+        sources.forEach(source => addSource(source));
+        setIsAddSourceDialogOpen(false);
+        setNewSource({ id: "", uri: "", format: "csv", iterator: "" });
+      } catch (e) {
+        console.error("Failed to import schema:", e);
+        alert("Failed to import Excel Schema. Check the developer console for details.");
+      }
+    } else if (newSource.id && newSource.uri && newSource.format) {
       addSource(newSource as RMLSource);
       setIsAddSourceDialogOpen(false);
       setNewSource({ id: "", uri: "", format: "csv", iterator: "" });

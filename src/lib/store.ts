@@ -10,7 +10,7 @@ import {
   TripletteProject,
   TripletteState,
 } from "./state";
-import { generateYarrrml } from "./yarrrml-generator";
+import { generateYarrrml, generateRML } from "./yarrrml-generator";
 import { extractColumns } from "./source-utils";
 import { generateTriples } from "./rml-processor";
 
@@ -44,6 +44,7 @@ const DEFAULT_PROJECT: TripletteProject = {
   name: "My mapping",
   ontologyFilePath: null,
   yarrrmlContent: "",
+  rmlContent: "",
   generatedTriples: null,
   classes: [],
   properties: [],
@@ -70,7 +71,8 @@ export const useStore = create<Store>((set, get) => {
   const syncYarrrml = (project: TripletteProject) => {
     try {
       const yarrrml = generateYarrrml(project);
-      return { ...project, yarrrmlContent: yarrrml };
+      const rml = generateRML(yarrrml);
+      return { ...project, yarrrmlContent: yarrrml, rmlContent: rml };
     } catch (e) {
       console.error("Failed to sync YARRRML:", e);
       return project;

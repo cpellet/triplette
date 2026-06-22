@@ -152,3 +152,64 @@ export async function loadSampleData(
   
   return [];
 }
+
+import { readFile } from "@tauri-apps/plugin-fs";
+import * as xlsx from "xlsx";
+import { SQLExcelSchemaConfig, RMLSource } from "./state";
+
+export async function importExcelSchema(
+  uri: string,
+  config: SQLExcelSchemaConfig,
+): Promise<RMLSource[]> {
+  try {
+    const data = await readFile(uri);
+    const workbook = xlsx.read(data, { type: "array" });
+
+    const tablesSheet = workbook.Sheets[config.tablesSheetName];
+    const propertiesSheet = workbook.Sheets[config.propertiesSheetName];
+
+    if (!tablesSheet) {
+      throw new Error(`Sheet '${config.tablesSheetName}' not found`);
+    }
+    if (!propertiesSheet) {
+      throw new Error(`Sheet '${config.propertiesSheetName}' not found`);
+    }
+
+    const tablesData = xlsx.utils.sheet_to_json<any>(tablesSheet);
+    const propertiesData = xlsx.utils.sheet_to_json<any>(propertiesSheet);
+
+    const sources: RMLSource[] = [];
+
+    const tableColumns = new Map<string, string[]>();
+    for (const propRow of propertiesData) {
+      const tableName = propRow[config.propertiesTableNameColumn];
+      const columnName = propRow[config.propertiesColumnNameColumn];
+      if (tableName && columnName) {
+        if (!tableColumns.has(tableName)) {
+          tableColumns.set(tableName, []);
+        }
+        tableColumns.get(tableName)!.push(columnName);
+      }
+    }
+
+    for (const tableRow of tablesData) {
+      const tableName = tableRow[config.tableNameColumn];
+      if (tableName) {
+        const columns = tableColumns.get(tableName) || [];
+        sources.push({
+          id: toYarrrmlId(tableName),
+          uri: uri,
+          format: "sql_excel_schema",
+          iterator: tableName,
+          columns,
+          schemaConfig: config,
+        });
+      }
+    }
+
+    return sources;
+  } catch (e) {
+    console.error("Failed to parse Excel schema:", e);
+    throw e;
+  }
+}

@@ -14,9 +14,10 @@ export function WelcomePage() {
       <div className="max-w-3xl w-full flex items-stretch p-8 space-x-12">
         {/* Left Side: Start */}
         <div className="flex-1 flex flex-col justify-center space-y-6">
-          <H1 className="flex flex-row items-center gap-2">
+          <H1 className="flex flex-row items-center gap-2 mb-0!">
             <Icon icon="graph" className="text-red-500" size={24} /> Triplette
           </H1>
+          <p className="text-gray-400">The ontology mapping toolkit</p>
           <div className="flex flex-col gap-3 max-w-xs mt-12">
             <Button
               intent="primary"

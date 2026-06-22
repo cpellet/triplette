@@ -19,10 +19,16 @@ export function generateYarrrml(project: TripletteProject): string {
   const sources = new YAMLMap();
   for (const source of project.sources) {
     const sourceMap = new YAMLMap();
-    sourceMap.set("access", source.uri);
-    sourceMap.set("referenceFormulation", source.format);
-    if (source.iterator) {
-      sourceMap.set("iterator", source.iterator);
+    if (source.format === "sql_excel_schema") {
+      sourceMap.set("access", source.uri);
+      sourceMap.set("referenceFormulation", "sqlquery");
+      sourceMap.set("query", `SELECT * FROM ${source.iterator}`);
+    } else {
+      sourceMap.set("access", source.uri);
+      sourceMap.set("referenceFormulation", source.format);
+      if (source.iterator) {
+        sourceMap.set("iterator", source.iterator);
+      }
     }
     sources.set(source.id, sourceMap);
   }
@@ -78,4 +84,26 @@ export function generateYarrrml(project: TripletteProject): string {
   doc.set("mappings", mappings);
 
   return doc.toString();
+}
+
+// @ts-ignore
+import yarrrml from "@rmlio/yarrrml-parser";
+import * as N3 from "n3";
+
+export function generateRML(yarrrmlContent: string): string {
+  try {
+    const y2r = new (yarrrml as any)();
+    const quads = y2r.convert(yarrrmlContent);
+    
+    const writer = new N3.Writer();
+    writer.addQuads(quads);
+    let result = "";
+    writer.end((err, res) => {
+      if (!err) result = res as string;
+    });
+    return result;
+  } catch (e) {
+    console.error("YARRRML to RML conversion failed:", e);
+    return "";
+  }
 }
